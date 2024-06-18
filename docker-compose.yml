@@ -1,7 +1,7 @@
 version: '3.3'
 services:
   sms:
-    image: bosagora/dms-sms:latest
+    image: bosagora/acc-sms:latest
     container_name: sms
     ports:
       - '7000:7000'

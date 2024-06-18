@@ -1,5 +1,5 @@
 {
-    "name": "dms-sms",
+    "name": "acc-sms",
     "version": "1.0.0",
     "description": "SMS for decentralized loyalty system",
     "main": "src/main.js",
@@ -16,7 +16,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/bosagora/dms-sms.git"
+        "url": "git+https://github.com/acc-coin/acc-sms.git"
     },
     "author": "BOSagora Foundation",
     "license": "AGPL-3.0-or-later",

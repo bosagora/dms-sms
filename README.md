@@ -1,17 +1,17 @@
-# dms-sms
+# acc-sms
 
 ## Preparing
 
 ### Install mpm modules
 
 ```shell
-npm install
+yarn install
 ```
 
 ### Create .env
 
 ```shell
-cp .env.sample .env
+cp env/.env.sample env/.env
 ```
 
 ## Running
