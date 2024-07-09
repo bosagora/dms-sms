@@ -12,11 +12,13 @@ import { Utils } from "../utils/Utils";
 export class Config implements IConfig {
     public server: ServerConfig;
     public logging: LoggingConfig;
+    public setting: Setting;
     public sms: SMSConfig;
 
     constructor() {
         this.server = new ServerConfig();
         this.logging = new LoggingConfig();
+        this.setting = new Setting();
         this.sms = new SMSConfig();
     }
 
@@ -49,9 +51,10 @@ export class Config implements IConfig {
     public readFromFile(config_file: string) {
         const cfg = readYamlEnvSync([path.resolve(Utils.getInitCWD(), config_file)], (key) => {
             return (process.env || {})[key];
-        }) as IConfig;
+        });
         this.server.readFromObject(cfg.server);
         this.logging.readFromObject(cfg.logging);
+        this.setting.readFromObject(cfg.setting);
         this.sms.readFromObject(cfg.sms);
     }
 }
@@ -112,35 +115,60 @@ export class LoggingConfig implements ILoggingConfig {
     }
 }
 
-export class SMSConfig implements ISMSConfig {
-    public endpoint: string;
-    public apikey: string;
-    public userid: string;
+export interface ISetting {
+    accessKey: string;
+}
+
+export class Setting implements ISetting {
     public accessKey: string;
 
     constructor() {
-        const defaults = SMSConfig.defaultValue();
-        this.endpoint = defaults.endpoint;
-        this.apikey = defaults.apikey;
-        this.userid = defaults.userid;
+        const defaults = Setting.defaultValue();
         this.accessKey = defaults.accessKey;
     }
 
-    public static defaultValue(): ISMSConfig {
-        return {
-            endpoint: process.env.SMS_ENDPOINT || "",
-            apikey: process.env.SMS_APIKEY || "",
-            userid: process.env.SMS_USERID || "",
-            accessKey: process.env.SMS_ACCESSKEY || "",
-        };
-    }
-
-    public readFromObject(config: ISMSConfig) {
-        if (config.endpoint !== undefined) this.endpoint = config.endpoint;
-        if (config.apikey !== undefined) this.apikey = config.apikey;
-        if (config.userid !== undefined) this.userid = config.userid;
+    public readFromObject(config: ISetting) {
         if (config.accessKey !== undefined) this.accessKey = config.accessKey;
     }
+
+    public static defaultValue(): ISetting {
+        return {
+            accessKey: "",
+        } as unknown as ISetting;
+    }
+}
+
+export class SMSConfig implements ISMSConfig {
+    public items: Map<string, ISMSItemConfig>;
+
+    constructor() {
+        this.items = new Map<string, ISMSItemConfig>();
+    }
+
+    public readFromObject(config: IRAWSMSConfig) {
+        this.items.clear();
+        if (config === undefined) return;
+        if (config.items !== undefined) {
+            for (const elem of config.items) {
+                if (elem.code !== undefined && elem.endpoint !== undefined &&elem.apikey !== undefined &&elem.userid !== undefined) {
+                    const item: ISMSItemConfig = {
+                        code: elem.code,
+                        endpoint: elem.endpoint,
+                        apikey: elem.apikey,
+                        userid: elem.userid,
+                    };
+                    this.items.set(item.code, item);
+                }
+            }
+        }
+    }
+}
+
+export interface IConfig {
+    server: IServerConfig;
+    logging: ILoggingConfig;
+    setting: ISetting;
+    sms: ISMSConfig;
 }
 
 export interface IServerConfig {
@@ -153,14 +181,16 @@ export interface ILoggingConfig {
 }
 
 export interface ISMSConfig {
+    items: Map<string, ISMSItemConfig>;
+}
+
+export interface IRAWSMSConfig {
+    items: ISMSItemConfig[];
+}
+
+export interface ISMSItemConfig {
+    code: string;
     endpoint: string;
     apikey: string;
     userid: string;
-    accessKey: string;
-}
-
-export interface IConfig {
-    server: IServerConfig;
-    logging: ILoggingConfig;
-    sms: ISMSConfig;
 }

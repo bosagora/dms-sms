@@ -26,7 +26,7 @@ describe("Test of Config", () => {
         console.log(phoneUtil.isValidNumber(number));
         console.log(phoneUtil.getRegionCodeForNumber(number));
         console.log(phoneUtil.format(number, PhoneNumberFormat.INTERNATIONAL));
-        console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL));
+        console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, ""));
     });
 
     it("Test Phone Number", async () => {
@@ -35,6 +35,26 @@ describe("Test of Config", () => {
         console.log(phoneUtil.isValidNumber(number));
         console.log(phoneUtil.getRegionCodeForNumber(number));
         console.log(phoneUtil.format(number, PhoneNumberFormat.INTERNATIONAL));
-        console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-/g, ""));
+        console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, ""));
+    });
+
+
+    it("getRegionCodeForNumber KR", async () => {
+        const phoneUtil = PhoneNumberUtil.getInstance();
+        const number = phoneUtil.parseAndKeepRawInput("+82 10-1000-2000", "ZZ");
+        console.log(phoneUtil.isValidNumber(number));
+        console.log(phoneUtil.getRegionCodeForNumber(number));
+        console.log(phoneUtil.format(number, PhoneNumberFormat.INTERNATIONAL));
+        console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, ""));
+    });
+
+    it("getRegionCodeForNumber PH", async () => {
+        const phoneUtil = PhoneNumberUtil.getInstance();
+        const number = phoneUtil.parseAndKeepRawInput("+63 09694950473", "ZZ");
+        console.log(phoneUtil.isValidNumber(number));
+        console.log(phoneUtil.getRegionCodeForNumber(number));
+        console.log(phoneUtil.format(number, PhoneNumberFormat.INTERNATIONAL));
+        console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL));
+        console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, ""));
     });
 });
