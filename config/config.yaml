@@ -5,8 +5,18 @@ server:
 logging:
   level: ${LOGGING_LEVEL}
 
-sms:
-  endpoint: ${SMS_ENDPOINT}
-  apikey: ${SMS_APIKEY}
-  userid: ${SMS_USERID}
+setting:
   accessKey: ${SMS_ACCESSKEY}
+
+sms:
+  items:
+    - code: KR
+      endpoint: ${KR_SMS_ENDPOINT}
+      apikey: ${KR_SMS_APIKEY}
+      userid: ${KR_SMS_USERID}
+      sender: ${KR_SMS_SENDER}
+    - code: PH
+      endpoint: ${PH_SMS_ENDPOINT}
+      apikey: ${PH_SMS_APIKEY}
+      userid: ${PH_SMS_USERID}
+      sender: ${PH_SMS_SENDER}

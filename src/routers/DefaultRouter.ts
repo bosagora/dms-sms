@@ -1,12 +1,15 @@
-import { Config } from "../common/Config";
+import { Config, ISMSItemConfig } from "../common/Config";
 import { logger } from "../common/Logger";
 import { Metrics } from "../metrics/Metrics";
 import { WebService } from "../service/WebService";
 
 import { body, validationResult } from "express-validator";
+import { PhoneNumberFormat, PhoneNumberUtil } from "google-libphonenumber";
 
 import express from "express";
-import { Utils } from "../utils/Utils";
+import { HTTPClient } from "../utils/HTTPClient";
+
+import { AxiosResponse } from "axios";
 
 // tslint:disable-next-line:no-var-requires
 const aligoapi = require("aligoapi");
@@ -67,7 +70,7 @@ export class DefaultRouter {
         }
         try {
             const accessKey = req.get("Authorization");
-            if (accessKey !== this._config.sms.accessKey) {
+            if (accessKey !== this._config.setting.accessKey) {
                 return res.json(
                     this.makeResponseData(400, undefined, {
                         message: "The access key entered is not valid.",
@@ -75,13 +78,57 @@ export class DefaultRouter {
                 );
             }
 
-            const msg: string = String(req.body.msg);
-            const sender: string = String(req.body.sender);
-            const receiver: string = Utils.checkPhoneNumber(String(req.body.receiver));
-            const smsResponse = await this.sendSMS(msg, sender, receiver);
-            logger.info(`POST /send : ${smsResponse.message}`);
-            this._metrics.add("success", 1);
-            return res.status(200).json(this.makeResponseData(200, smsResponse, null));
+            const msg: string = String(req.body.msg).trim();
+            const sender: string = String(req.body.sender).trim();
+            const receiver: string = String(req.body.receiver).trim();
+            const phoneUtil = PhoneNumberUtil.getInstance();
+            const number = phoneUtil.parseAndKeepRawInput(receiver, "ZZ");
+            if (phoneUtil.isValidNumber(number)) {
+                const region = phoneUtil.getRegionCodeForNumber(number);
+                if (region === undefined) {
+                    this._metrics.add("failure", 1);
+                    return res.status(200).json(
+                        this.makeResponseData(500, undefined, {
+                            message: "This is an unsupported country",
+                        })
+                    );
+                }
+                const rpcInfo = this._config.sms.items.get(region);
+                if (rpcInfo === undefined) {
+                    this._metrics.add("success", 1);
+                    return res.status(200).json(
+                        this.makeResponseData(500, undefined, {
+                            message: "This is an unsupported country",
+                        })
+                    );
+                }
+
+                let smsResponse;
+                const receiverPhone = phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, "");
+                if (region === "KR") {
+                    smsResponse = await this.sendSMSKR(msg, sender, receiverPhone, rpcInfo);
+                    this._metrics.add("success", 1);
+                    return res.status(200).json(this.makeResponseData(200, smsResponse, null));
+                } else if (region === "PH") {
+                    smsResponse = await this.sendSMSPH(msg, sender, receiverPhone, rpcInfo);
+                    this._metrics.add("success", 1);
+                    return res.status(200).json(this.makeResponseData(200, smsResponse, null));
+                } else {
+                    this._metrics.add("failure", 1);
+                    return res.status(200).json(
+                        this.makeResponseData(500, undefined, {
+                            message: "This is an unsupported country",
+                        })
+                    );
+                }
+            } else {
+                this._metrics.add("failure", 1);
+                return res.status(200).json(
+                    this.makeResponseData(500, undefined, {
+                        message: "Invalid phone number format",
+                    })
+                );
+            }
         } catch (error: any) {
             logger.error(`POST /send : ${error.message}`);
             this._metrics.add("failure", 1);
@@ -95,10 +142,11 @@ export class DefaultRouter {
         }
     }
 
-    private sendSMS(msg: string, sender: string, receiver: string): Promise<ISMSResponse> {
+    private sendSMSKR(msg: string, sender: string, receiver: string, config: ISMSItemConfig): Promise<ISMSResponse> {
+        logger.http(`sendSMSKR`);
         const AuthData = {
-            key: this._config.sms.apikey,
-            user_id: this._config.sms.userid,
+            key: config.apikey,
+            user_id: config.userid,
         };
         const req = {
             headers: { "content-type": "application/json" },
@@ -106,7 +154,7 @@ export class DefaultRouter {
                 msg,
                 sender,
                 receiver,
-                testmode_yn: process.env.SMS_TESTMODE || "",
+                testmode_yn: "N",
             },
         };
         return new Promise<ISMSResponse>((resolve, reject) => {
@@ -114,6 +162,28 @@ export class DefaultRouter {
                 .send(req, AuthData)
                 .then((r: any) => {
                     resolve({ code: r.result_code, message: r.message });
+                })
+                .catch((e: any) => {
+                    reject(e);
+                });
+        });
+    }
+
+    private sendSMSPH(msg: string, sender: string, receiver: string, config: ISMSItemConfig): Promise<ISMSResponse> {
+        logger.http(`sendSMSPH`);
+        return new Promise<ISMSResponse>((resolve, reject) => {
+            const client = new HTTPClient();
+            client.post(config.endpoint, {apikey: config.apikey, number: receiver, message: msg})
+                .then((r: AxiosResponse) => {
+                    if (Array.isArray(r.data) && r.data.length > 0) {
+                        if (r.data[0].status !== "Failed") {
+                            resolve({ code: "1", message: "success" });
+                        } else {
+                            resolve({ code: "-1", message: "failed" });
+                        }
+                    } else {
+                        resolve({ code: "-1", message: "failed" });
+                    }
                 })
                 .catch((e: any) => {
                     reject(e);

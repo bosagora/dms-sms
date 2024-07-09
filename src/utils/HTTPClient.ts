@@ -1,16 +1,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
-import { DefaultServer } from "../../src/DefaultServer";
-import { handleNetworkError } from "../../src/network/ErrorTypes";
+import { handleNetworkError } from "../network/ErrorTypes";
 
-export class TestServer extends DefaultServer {}
-
-/**
- * This is a client for testing.
- * Test codes can easily access error messages received from the server.
- */
-export class TestClient {
+export class HTTPClient {
     private client: AxiosInstance;
-
     constructor(config?: AxiosRequestConfig) {
         this.client = axios.create(config);
     }
@@ -66,10 +58,4 @@ export class TestClient {
                 });
         });
     }
-}
-
-export function delay(interval: number): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        setTimeout(resolve, interval);
-    });
 }

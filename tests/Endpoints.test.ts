@@ -23,7 +23,7 @@ describe("Test of Server", () => {
         config.readFromFile(path.resolve(process.cwd(), "tests", "config.test.yaml"));
         client = new TestClient({
             headers: {
-                Authorization: config.sms.accessKey,
+                Authorization: config.setting.accessKey,
             },
         });
     });
@@ -44,8 +44,8 @@ describe("Test of Server", () => {
     it("Send loyalty type", async () => {
         const contents: string[] = [];
         contents.push(`#1`);
-        contents.push(`인증번호 [45]`);
-        contents.push(`5분간 유효합니다`);
+        contents.push(`I just sent my first priority message with Semaphore`);
+        contents.push(`It's valid for 5 minutes`);
         const uri = URI(serverURL).filename("send");
         const url = uri.toString();
         const response = await client.post(url, {
@@ -53,6 +53,7 @@ describe("Test of Server", () => {
             sender: process.env.SMS_SENDER,
             receiver: process.env.SMS_RECEIVER,
         });
+        console.log(response.data);
 
         expect(response.data.code).to.equal(200);
         expect(response.data.data.code).to.equal("1");
