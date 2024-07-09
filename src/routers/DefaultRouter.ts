@@ -86,6 +86,7 @@ export class DefaultRouter {
             if (phoneUtil.isValidNumber(number)) {
                 const region = phoneUtil.getRegionCodeForNumber(number);
                 if (region === undefined) {
+                    logger.error(`This is an unsupported country: ${receiver}`);
                     this._metrics.add("failure", 1);
                     return res.status(200).json(
                         this.makeResponseData(500, undefined, {
@@ -95,7 +96,8 @@ export class DefaultRouter {
                 }
                 const rpcInfo = this._config.sms.items.get(region);
                 if (rpcInfo === undefined) {
-                    this._metrics.add("success", 1);
+                    logger.error(`This is an unsupported country: ${receiver}`);
+                    this._metrics.add("failure", 1);
                     return res.status(200).json(
                         this.makeResponseData(500, undefined, {
                             message: "This is an unsupported country",
@@ -105,6 +107,7 @@ export class DefaultRouter {
 
                 let smsResponse;
                 const receiverPhone = phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, "");
+                logger.http(`receiver: ${receiver} -> ${receiverPhone}`);
                 if (region === "KR") {
                     smsResponse = await this.sendSMSKR(msg, sender, receiverPhone, rpcInfo);
                     this._metrics.add("success", 1);
@@ -114,6 +117,7 @@ export class DefaultRouter {
                     this._metrics.add("success", 1);
                     return res.status(200).json(this.makeResponseData(200, smsResponse, null));
                 } else {
+                    logger.error(`This is an unsupported country: ${receiver} -> ${receiverPhone}`);
                     this._metrics.add("failure", 1);
                     return res.status(200).json(
                         this.makeResponseData(500, undefined, {
@@ -122,6 +126,7 @@ export class DefaultRouter {
                     );
                 }
             } else {
+                logger.error(`Invalid phone number format: ${receiver}`);
                 this._metrics.add("failure", 1);
                 return res.status(200).json(
                     this.makeResponseData(500, undefined, {
