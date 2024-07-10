@@ -43,9 +43,7 @@ describe("Test of Server", () => {
 
     it("Send loyalty type", async () => {
         const contents: string[] = [];
-        contents.push(`#1`);
-        contents.push(`I just sent my first priority message with Semaphore`);
-        contents.push(`It's valid for 5 minutes`);
+        contents.push(`#1 Code: 00`);
         const uri = URI(serverURL).filename("send");
         const url = uri.toString();
         const response = await client.post(url, {

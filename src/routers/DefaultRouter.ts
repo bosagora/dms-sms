@@ -46,7 +46,7 @@ export class DefaultRouter {
         this.app.get("/", [], this.getHealthStatus.bind(this));
         this.app.post(
             "/send",
-            [body("msg").exists(), body("sender").exists(), body("receiver").exists()],
+            [body("msg").exists(), body("receiver").exists()],
             this.send.bind(this)
         );
         this.app.get("/metrics", [], this.getMetrics.bind(this));
@@ -79,7 +79,6 @@ export class DefaultRouter {
             }
 
             const msg: string = String(req.body.msg).trim();
-            const sender: string = String(req.body.sender).trim();
             const receiver: string = String(req.body.receiver).trim();
             const phoneUtil = PhoneNumberUtil.getInstance();
             const number = phoneUtil.parseAndKeepRawInput(receiver, "ZZ");
@@ -109,11 +108,11 @@ export class DefaultRouter {
                 const receiverPhone = phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, "");
                 logger.http(`receiver: ${receiver} -> ${receiverPhone}`);
                 if (region === "KR") {
-                    smsResponse = await this.sendSMSKR(msg, sender, receiverPhone, rpcInfo);
+                    smsResponse = await this.sendSMSKR(msg, receiverPhone, rpcInfo);
                     this._metrics.add("success", 1);
                     return res.status(200).json(this.makeResponseData(200, smsResponse, null));
                 } else if (region === "PH") {
-                    smsResponse = await this.sendSMSPH(msg, sender, receiverPhone, rpcInfo);
+                    smsResponse = await this.sendSMSPH(msg, receiverPhone, rpcInfo);
                     this._metrics.add("success", 1);
                     return res.status(200).json(this.makeResponseData(200, smsResponse, null));
                 } else {
@@ -147,7 +146,7 @@ export class DefaultRouter {
         }
     }
 
-    private sendSMSKR(msg: string, sender: string, receiver: string, config: ISMSItemConfig): Promise<ISMSResponse> {
+    private sendSMSKR(msg: string, receiver: string, config: ISMSItemConfig): Promise<ISMSResponse> {
         logger.http(`sendSMSKR`);
         const AuthData = {
             key: config.apikey,
@@ -157,7 +156,7 @@ export class DefaultRouter {
             headers: { "content-type": "application/json" },
             body: {
                 msg,
-                sender,
+                sender: config.sender,
                 receiver,
                 testmode_yn: "N",
             },
@@ -174,11 +173,13 @@ export class DefaultRouter {
         });
     }
 
-    private sendSMSPH(msg: string, sender: string, receiver: string, config: ISMSItemConfig): Promise<ISMSResponse> {
+    private sendSMSPH(msg: string, receiver: string, config: ISMSItemConfig): Promise<ISMSResponse> {
         logger.http(`sendSMSPH`);
         return new Promise<ISMSResponse>((resolve, reject) => {
+            const sendData = {apikey: config.apikey, number: receiver, message: msg, sendername: config.sender};
+            logger.info("sent data: ", sendData);
             const client = new HTTPClient();
-            client.post(config.endpoint, {apikey: config.apikey, number: receiver, message: msg})
+            client.post(config.endpoint, sendData)
                 .then((r: AxiosResponse) => {
                     if (Array.isArray(r.data) && r.data.length > 0) {
                         if (r.data[0].status !== "Failed") {

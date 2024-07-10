@@ -156,6 +156,7 @@ export class SMSConfig implements ISMSConfig {
                         endpoint: elem.endpoint,
                         apikey: elem.apikey,
                         userid: elem.userid,
+                        sender: elem.sender,
                     };
                     this.items.set(item.code, item);
                 }
@@ -193,4 +194,5 @@ export interface ISMSItemConfig {
     endpoint: string;
     apikey: string;
     userid: string;
+    sender: string;
 }
