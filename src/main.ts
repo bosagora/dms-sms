@@ -2,6 +2,10 @@ import dotenv from "dotenv";
 import { Config } from "./common/Config";
 import { logger, Logger } from "./common/Logger";
 import { DefaultServer } from "./DefaultServer";
+import { Scheduler } from "./scheduler/Scheduler";
+import { SMSScheduler } from "./scheduler/SMSScheduler";
+import { SMSStorage } from "./storage/SMSStorage";
+import { Utils } from "./utils/Utils";
 
 dotenv.config({ path: "env/.env" });
 
@@ -17,7 +21,18 @@ async function main() {
     logger.info(`address: ${config.server.address}`);
     logger.info(`port: ${config.server.port}`);
 
-    server = new DefaultServer(config);
+    await Utils.delay(1000);
+    const storage = await SMSStorage.make(config.database);
+
+    const schedulers: Scheduler[] = [];
+    if (config.scheduler.enable) {
+        const scheduler = config.scheduler.getScheduler("sms");
+        if (scheduler && scheduler.enable) {
+            schedulers.push(new SMSScheduler(scheduler.expression));
+        }
+    }
+
+    server = new DefaultServer(config, storage, schedulers);
     return server.start().catch((error: any) => {
         switch (error.code) {
             case "EACCES":

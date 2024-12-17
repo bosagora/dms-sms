@@ -38,7 +38,6 @@ describe("Test of Config", () => {
         console.log(phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, ""));
     });
 
-
     it("getRegionCodeForNumber KR", async () => {
         const phoneUtil = PhoneNumberUtil.getInstance();
         const number = phoneUtil.parseAndKeepRawInput("+82 10-1000-2000", "ZZ");

@@ -5,15 +5,18 @@ import { HTTPClient } from "../../src/utils/HTTPClient";
 
 import { AxiosResponse } from "axios";
 
+import moment from "moment-timezone";
 import URI from "urijs";
 
-import { URL } from "url";
-
 async function main() {
+    const startDate = moment().tz("Asia/Seoul").format("YYYY-MM-DD");
+    const endDate = moment().add(1, "day").tz("Asia/Seoul").format("YYYY-MM-DD");
     const url = URI("https://api.semaphore.co")
-        .directory("/api/v4/messages")
-        .filename("237590749")
+        .directory(`/api/v4/messages`)
         .addQuery("apikey", process.env.PH_SMS_APIKEY || "")
+        .addQuery("page", 1)
+        .addQuery("limit", 1000)
+        .addQuery("status", "pending")
         .toString();
     const client = new HTTPClient();
     client

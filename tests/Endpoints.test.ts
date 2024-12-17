@@ -8,6 +8,7 @@ import { expect } from "chai";
 
 import * as path from "path";
 import { URL } from "url";
+import { SMSStorage } from "../src/storage/SMSStorage";
 
 // tslint:disable-next-line:no-var-requires
 const URI = require("urijs");
@@ -17,6 +18,7 @@ describe("Test of Server", () => {
     let server: TestServer;
     let serverURL: URL;
     let config: Config;
+    let storage: SMSStorage;
 
     before("Create Config", async () => {
         config = new Config();
@@ -29,8 +31,9 @@ describe("Test of Server", () => {
     });
 
     before("Create TestServer", async () => {
+        storage = await SMSStorage.make(config.database);
         serverURL = new URL(`http://127.0.0.1:${config.server.port}`);
-        server = new TestServer(config);
+        server = new TestServer(config, storage);
     });
 
     before("Start TestServer", async () => {

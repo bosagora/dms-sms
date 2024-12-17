@@ -1,17 +1,24 @@
-version: '3.3'
 services:
-  sms:
-    image: bosagora/acc-sms:latest
-    container_name: sms
+  postgres:
+    image: postgres:14
+    container_name: postgres
     ports:
-      - '7000:7000'
+      - '5432:5432'
     restart: always
+    command:
+      [
+        "postgres",
+        "-c", "shared_preload_libraries=pg_stat_statements",
+        "-c", "max_connections=1000"
+      ]
     environment:
-      HOST_IP: 0.0.0.0
-      HOST_PORT: 3300
-    networks:
-      - default_network
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_USER: agora
+      POSTGRES_DB: postgres
+      PGDATA: /postgresql/data
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      - postgres_db:/postgresql/data
 
-networks:
-  default_network:
-    driver: bridge
+volumes:
+  postgres_db:
