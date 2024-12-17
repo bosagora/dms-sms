@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sms">
+
+    <insert id="postSMS">
+        INSERT INTO sms
+        (
+            "receiver"  ,
+            "message"   ,
+            "region"    ,
+            "status"    ,
+            "messageId" ,
+            "timestamp"
+        )
+        VALUES
+            (
+                #{receiver} ,
+                #{message}  ,
+                #{region}   ,
+                #{status}   ,
+                #{messageId},
+                now()
+            )
+    </insert>
+
+    <select id="getSMSOnPending">
+        SELECT
+            *
+        FROM
+            sms
+        WHERE (
+            "status" = 'queued' OR
+            "status" = 'pending'
+        ) AND "region" = 'PH'
+        ORDER BY sequence ASC
+        LIMIT ${limit};
+    </select>
+
+    <select id="getSMSOnStarted">
+        SELECT
+            *
+        FROM
+            sms
+        WHERE
+            "status" = 'started'
+        ORDER BY sequence ASC
+            LIMIT ${limit};
+    </select>
+
+    <update id="updateSMS">
+        UPDATE sms
+        SET
+            "messageId" = #{messageId},
+            "status" = #{status}
+        WHERE
+            "sequence" = #{sequence}
+    </update>
+</mapper>

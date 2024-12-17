@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="table">
+    <sql id="sms">
+        CREATE TABLE IF NOT EXISTS sms
+        (
+            "sequence" BIGINT generated always as identity,
+            "receiver" VARCHAR(32) NOT NULL,
+            "message" VARCHAR(256) NOT NULL,
+            "region" VARCHAR(12) NOT NULL,
+            "status" VARCHAR(32) NOT NULL,
+            "messageId" VARCHAR(64) NOT NULL,
+            "timestamp" TIMESTAMP,
+            PRIMARY KEY("sequence")
+        );
+        CREATE SEQUENCE IF NOT EXISTS sms_sequence_seq;
+        CREATE INDEX IF NOT EXISTS sms_sequence_id_index
+            on sms ("messageId");
+    </sql>
+
+    <select id="create_table">
+        <include refid="sms"/>
+    </select>
+
+    <select id="drop_table">
+        DROP TABLE sms;
+    </select>
+</mapper>

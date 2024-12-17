@@ -11,15 +11,19 @@ import { Utils } from "../utils/Utils";
  */
 export class Config implements IConfig {
     public server: ServerConfig;
+    public database: DatabaseConfig;
     public logging: LoggingConfig;
     public setting: Setting;
     public sms: SMSConfig;
+    public scheduler: SchedulerConfig;
 
     constructor() {
         this.server = new ServerConfig();
+        this.database = new DatabaseConfig();
         this.logging = new LoggingConfig();
         this.setting = new Setting();
         this.sms = new SMSConfig();
+        this.scheduler = new SchedulerConfig();
     }
 
     public static createWithArgument(): Config {
@@ -53,9 +57,11 @@ export class Config implements IConfig {
             return (process.env || {})[key];
         });
         this.server.readFromObject(cfg.server);
+        this.database.readFromObject(cfg.database);
         this.logging.readFromObject(cfg.logging);
         this.setting.readFromObject(cfg.setting);
         this.sms.readFromObject(cfg.sms);
+        this.scheduler.readFromObject(cfg.scheduler);
     }
 }
 
@@ -96,6 +102,74 @@ export class ServerConfig implements IServerConfig {
     }
 }
 
+export class DatabaseConfig implements IDatabaseConfig {
+    host: string;
+    user: string;
+    password: string;
+    database: string;
+    scheme: string;
+    port: number;
+    connectionTimeoutMillis: number;
+    max: number;
+
+    constructor(
+        host?: string,
+        user?: string,
+        password?: string,
+        database?: string,
+        scheme?: string,
+        port?: number,
+        connectionTimeoutMillis?: number,
+        max?: number
+    ) {
+        const conf = extend(true, {}, DatabaseConfig.defaultValue());
+        extend(true, conf, {
+            host,
+            user,
+            password,
+            database,
+            scheme,
+            port,
+            connectionTimeoutMillis,
+            max,
+        });
+        this.host = conf.host;
+        this.user = conf.user;
+        this.password = conf.password;
+        this.database = conf.database;
+        this.scheme = conf.scheme;
+        this.port = conf.port;
+        this.connectionTimeoutMillis = conf.connectionTimeoutMillis;
+        this.max = conf.max;
+    }
+
+    public static defaultValue(): IDatabaseConfig {
+        return {
+            host: "localhost",
+            user: "root",
+            password: "12345678",
+            database: "relay",
+            scheme: "",
+            port: 5432,
+            connectionTimeoutMillis: 2000,
+            max: 20,
+        };
+    }
+
+    public readFromObject(config: IDatabaseConfig) {
+        const conf = extend(true, {}, DatabaseConfig.defaultValue());
+        extend(true, conf, config);
+        this.host = conf.host;
+        this.user = conf.user;
+        this.password = conf.password;
+        this.database = conf.database;
+        this.scheme = conf.scheme;
+        this.port = conf.port;
+        this.connectionTimeoutMillis = conf.connectionTimeoutMillis;
+        this.max = conf.max;
+    }
+}
+
 export class LoggingConfig implements ILoggingConfig {
     public level: string;
 
@@ -112,6 +186,42 @@ export class LoggingConfig implements ILoggingConfig {
 
     public readFromObject(config: ILoggingConfig) {
         if (config.level) this.level = config.level;
+    }
+}
+
+export class SchedulerConfig implements ISchedulerConfig {
+    public enable: boolean;
+    public items: ISchedulerItemConfig[];
+
+    constructor() {
+        const defaults = SchedulerConfig.defaultValue();
+        this.enable = defaults.enable;
+        this.items = defaults.items;
+    }
+
+    public static defaultValue(): ISchedulerConfig {
+        return {
+            enable: false,
+            items: [
+                {
+                    name: "sms_ph",
+                    enable: false,
+                    expression: "*/1 * * * * *",
+                },
+            ],
+        } as unknown as ISchedulerConfig;
+    }
+
+    public readFromObject(config: ISchedulerConfig) {
+        this.enable = false;
+        this.items = [];
+        if (config === undefined) return;
+        if (config.enable !== undefined) this.enable = config.enable.toString().toLowerCase() === "true";
+        if (config.items !== undefined) this.items = config.items;
+    }
+
+    public getScheduler(name: string): ISchedulerItemConfig | undefined {
+        return this.items.find((m) => m.name === name);
     }
 }
 
@@ -150,7 +260,12 @@ export class SMSConfig implements ISMSConfig {
         if (config === undefined) return;
         if (config.items !== undefined) {
             for (const elem of config.items) {
-                if (elem.code !== undefined && elem.endpoint !== undefined &&elem.apikey !== undefined &&elem.userid !== undefined) {
+                if (
+                    elem.code !== undefined &&
+                    elem.endpoint !== undefined &&
+                    elem.apikey !== undefined &&
+                    elem.userid !== undefined
+                ) {
                     const item: ISMSItemConfig = {
                         code: elem.code,
                         endpoint: elem.endpoint,
@@ -165,16 +280,20 @@ export class SMSConfig implements ISMSConfig {
     }
 }
 
-export interface IConfig {
-    server: IServerConfig;
-    logging: ILoggingConfig;
-    setting: ISetting;
-    sms: ISMSConfig;
-}
-
 export interface IServerConfig {
     address: string;
     port: number;
+}
+
+export interface IDatabaseConfig {
+    host: string;
+    user: string;
+    password: string;
+    database: string;
+    scheme: string;
+    port: number;
+    connectionTimeoutMillis: number;
+    max: number;
 }
 
 export interface ILoggingConfig {
@@ -195,4 +314,25 @@ export interface ISMSItemConfig {
     apikey: string;
     userid: string;
     sender: string;
+}
+
+export interface ISchedulerItemConfig {
+    name: string;
+    enable: boolean;
+    expression: string;
+}
+
+export interface ISchedulerConfig {
+    enable: boolean;
+    items: ISchedulerItemConfig[];
+    getScheduler(name: string): ISchedulerItemConfig | undefined;
+}
+
+export interface IConfig {
+    server: IServerConfig;
+    database: IDatabaseConfig;
+    logging: ILoggingConfig;
+    setting: ISetting;
+    sms: ISMSConfig;
+    scheduler: ISchedulerConfig;
 }

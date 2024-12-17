@@ -5,19 +5,12 @@ import { HTTPClient } from "../../src/utils/HTTPClient";
 
 import { AxiosResponse } from "axios";
 
-import URI from "urijs";
-
-import { URL } from "url";
-
 async function main() {
-    const url = URI("https://api.semaphore.co")
-        .directory("/api/v4/messages")
-        .filename("237590749")
-        .addQuery("apikey", process.env.PH_SMS_APIKEY || "")
-        .toString();
+    const api_key = process.env.PH_SMS_APIKEY;
+    const sendData = { apikey: api_key, number: "639998887777", message: "These messages", sendername: "ACCsoft" };
     const client = new HTTPClient();
     client
-        .get(url)
+        .post("https://api.semaphore.co/api/v4/messages", sendData)
         .then((r: AxiosResponse) => {
             console.log(r.data);
         })
