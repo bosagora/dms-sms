@@ -58,6 +58,6 @@ describe("Test of Server", () => {
 
         expect(response.data.code).to.equal(200);
         expect(response.data.data.code).to.equal("1");
-        expect(response.data.data.message).to.equal("success");
+        expect(response.data.data.message).to.equal("saved");
     });
 });

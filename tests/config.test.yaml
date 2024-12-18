@@ -2,6 +2,16 @@ server:
   address: 0.0.0.0
   port: 3300
 
+database:
+  host: "${DATABASE_HOST}"
+  user: "${DATABASE_USER}"
+  password: "${DATABASE_PASSWORD}"
+  database: "${DATABASE_NAME}"
+  scheme: "${DATABASE_SCHEME}"
+  port: "${DATABASE_PORT}"
+  connectionTimeoutMillis: 2000
+  max: 100
+
 logging:
   level: debug
 
@@ -20,3 +30,10 @@ sms:
       apikey: ${PH_SMS_APIKEY}
       userid: ${PH_SMS_USERID}
       sender: ${PH_SMS_SENDER}
+
+scheduler:
+  enable: true
+  items:
+    - name: sms
+      enable: true
+      expression: "*/1 * * * * *"
