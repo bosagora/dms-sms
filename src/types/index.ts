@@ -29,3 +29,13 @@ export enum MessageRegion {
     Korean = "KR",
     Philippines = "PH",
 }
+
+export interface IVerification {
+    requestId: string;
+    receiver: string;
+    region: string;
+    code1: string;
+    code2: string;
+    code3: string;
+    status: string;
+}

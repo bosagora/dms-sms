@@ -18,11 +18,28 @@
             on sms ("messageId");
     </sql>
 
+    <sql id="verification">
+        CREATE TABLE IF NOT EXISTS verification
+        (
+            "requestId" VARCHAR(66) NOT NULL,
+            "receiver" VARCHAR(32) NOT NULL,
+            "region" VARCHAR(12) NOT NULL,
+            "code1" VARCHAR(2) DEFAULT '??',
+            "code2" VARCHAR(2) DEFAULT '??',
+            "code3" VARCHAR(2) DEFAULT '??',
+            "status" VARCHAR(32) DEFAULT 'pending',
+            "timestamp" TIMESTAMP,
+            PRIMARY KEY("requestId")
+        );
+    </sql>
+
     <select id="create_table">
         <include refid="sms"/>
+        <include refid="verification"/>
     </select>
 
     <select id="drop_table">
         DROP TABLE sms;
+        DROP TABLE verification;
     </select>
 </mapper>

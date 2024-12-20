@@ -1,5 +1,5 @@
 import { IDatabaseConfig } from "../common/Config";
-import { IProcessedSMSPHData, ISMSData, MessageStatus } from "../types";
+import { IProcessedSMSPHData, ISMSData, IVerification, MessageStatus } from "../types";
 import { Utils } from "../utils/Utils";
 import { Storage } from "./Storage";
 
@@ -17,6 +17,7 @@ export class SMSStorage extends Storage {
         await super.initialize();
         MybatisMapper.createMapper([path.resolve(Utils.getInitCWD(), "src/storage/mapper/table.xml")]);
         MybatisMapper.createMapper([path.resolve(Utils.getInitCWD(), "src/storage/mapper/sms.xml")]);
+        MybatisMapper.createMapper([path.resolve(Utils.getInitCWD(), "src/storage/mapper/verification.xml")]);
         await this.createTables();
     }
 
@@ -122,6 +123,100 @@ export class SMSStorage extends Storage {
                 sequence: data.sequence,
                 status: data.status,
                 messageId: data.messageId,
+            })
+                .then(() => {
+                    return resolve();
+                })
+                .catch((reason) => {
+                    if (reason instanceof Error) return reject(reason);
+                    return reject(new Error(reason));
+                });
+        });
+    }
+
+    public postVerificationCode1(requestId: string, code1: string, receiver: string, region: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            this.queryForMapper("verification", "postCode1", {
+                requestId,
+                receiver,
+                region,
+                code1,
+            })
+                .then(() => {
+                    return resolve();
+                })
+                .catch((reason) => {
+                    if (reason instanceof Error) return reject(reason);
+                    return reject(new Error(reason));
+                });
+        });
+    }
+
+    public postVerificationCode2(requestId: string, code2: string, receiver: string, region: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            this.queryForMapper("verification", "postCode2", {
+                requestId,
+                receiver,
+                region,
+                code2,
+            })
+                .then(() => {
+                    return resolve();
+                })
+                .catch((reason) => {
+                    if (reason instanceof Error) return reject(reason);
+                    return reject(new Error(reason));
+                });
+        });
+    }
+
+    public postVerificationCode3(requestId: string, code3: string, receiver: string, region: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            this.queryForMapper("verification", "postCode3", {
+                requestId,
+                receiver,
+                region,
+                code3,
+            })
+                .then(() => {
+                    return resolve();
+                })
+                .catch((reason) => {
+                    if (reason instanceof Error) return reject(reason);
+                    return reject(new Error(reason));
+                });
+        });
+    }
+
+    public getVerification(limit: number): Promise<IVerification[]> {
+        return new Promise<IVerification[]>(async (resolve, reject) => {
+            this.queryForMapper("verification", "getAuthentication", { limit })
+                .then((result) => {
+                    return resolve(
+                        result.rows.map((m) => {
+                            return {
+                                requestId: m.requestId,
+                                receiver: m.receiver,
+                                region: m.region,
+                                code1: m.code1,
+                                code2: m.code2,
+                                code3: m.code3,
+                                status: m.status,
+                            };
+                        })
+                    );
+                })
+                .catch((reason) => {
+                    if (reason instanceof Error) return reject(reason);
+                    return reject(new Error(reason));
+                });
+        });
+    }
+
+    public removeVerification(requestId: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            this.queryForMapper("verification", "remove", {
+                requestId,
             })
                 .then(() => {
                     return resolve();

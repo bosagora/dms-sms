@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="verification">
+
+    <insert id="postCode1">
+        INSERT INTO verification
+            (
+                "requestId"         ,
+                "receiver"          ,
+                "code1"             ,
+                "region"            ,
+                "timestamp"
+            )
+        VALUES
+            (
+                #{requestId}        ,
+                #{receiver}         ,
+                #{code1}             ,
+                #{region}           ,
+                now()
+            )
+        ON CONFLICT ("requestId")
+        DO UPDATE
+        SET 
+            "receiver" = #{receiver},
+            "region" = #{region},
+            "code1" = #{code1};
+    </insert>
+
+    <insert id="postCode2">
+        INSERT INTO verification
+            (
+                "requestId"         ,
+                "receiver"          ,
+                "region"            ,
+                "code2"             ,
+                "timestamp"
+            )
+        VALUES
+            (
+                #{requestId}        ,
+                #{receiver}         ,
+                #{region}           ,
+                #{code2}             ,
+                now()
+            )
+        ON CONFLICT ("requestId")
+        DO UPDATE
+        SET 
+            "receiver" = #{receiver},
+            "region" = #{region},
+            "code2" = #{code2};
+    </insert>
+
+
+    <insert id="postCode3">
+        INSERT INTO verification
+            (
+                "requestId"         ,
+                "receiver"          ,
+                "region"            ,
+                "code3"             ,
+                "timestamp"
+            )
+        VALUES
+            (
+                #{requestId}        ,
+                #{receiver}         ,
+                #{region}           ,
+                #{code3}             ,
+                now()
+            )
+        ON CONFLICT ("requestId")
+        DO UPDATE
+        SET 
+            "receiver" = #{receiver},
+            "region" = #{region},
+            "code3" = #{code3};
+    </insert>
+
+    <select id="getAuthentication">
+        SELECT
+            *
+        FROM
+            verification
+        WHERE 
+            "status" = 'pending' AND
+            "code1" != '??' AND
+            "code2" != '??' AND
+            "code3" != '??'
+        ORDER BY "timestamp" ASC
+        LIMIT ${limit}  
+    </select>
+
+    <delete id="remove">
+        DELETE
+        FROM 
+            verification
+        WHERE
+            "requestId" = #{requestId}
+    </delete>
+</mapper>

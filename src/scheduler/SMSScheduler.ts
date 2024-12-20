@@ -79,10 +79,23 @@ export class SMSScheduler extends Scheduler {
 
     protected async work() {
         try {
+            await this.onVerification();
             await this.onSendMessages();
             await this.onWatchSMS();
         } catch (error) {
             logger.error(`Failed to execute the SMSScheduler: ${error}`);
+        }
+    }
+
+    private async onVerification() {
+        const list = await this.storage.getVerification(2);
+        for (const item of list) {
+            const { requestId, receiver, region, code1, code2, code3 } = item;
+
+            const code = code1 + code2 + code3;
+            const message = `Verification code is ${code}`;
+            await this.storage.sendSMS(receiver, message, region);
+            await this.storage.removeVerification(requestId);
         }
     }
 
