@@ -93,7 +93,7 @@ export class SMSScheduler extends Scheduler {
             const { requestId, receiver, region, code1, code2, code3 } = item;
 
             const code = code1 + code2 + code3;
-            const message = `Verification code is ${code}`;
+            const message = `Verification code is ${code}\n#1: ${code1}\n#2: ${code2}\n#3: ${code3}`;
             await this.storage.sendSMS(receiver, message, region);
             await this.storage.removeVerification(requestId);
         }
