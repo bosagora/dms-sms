@@ -98,11 +98,11 @@ export class DefaultRouter {
                 const receiverPhone = phoneUtil.format(number, PhoneNumberFormat.NATIONAL).replace(/\-| /g, "");
                 logger.http(`receiver: ${receiver} -> ${receiverPhone}`);
                 if (region === "KR") {
-                    await this._storage.sendSMS(receiverPhone, msg, region);
+                    await this._storage.sendSMS(receiverPhone, msg, region, 1);
                     this._metrics.add("success", 1);
                     return res.status(200).json(this.makeResponseData(200, { code: "1", message: "saved" }, null));
                 } else if (region === "PH") {
-                    await this._storage.sendSMS(receiverPhone, msg, region);
+                    await this._storage.sendSMS(receiverPhone, msg, region, 1);
                     this._metrics.add("success", 1);
                     return res.status(200).json(this.makeResponseData(200, { code: "1", message: "saved" }, null));
                 } else {

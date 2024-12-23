@@ -94,35 +94,37 @@ export class SMSScheduler extends Scheduler {
 
             const code = code1 + code2 + code3;
             const message = `Verification code is ${code}\n#1: ${code1}\n#2: ${code2}\n#3: ${code3}`;
-            await this.storage.sendSMS(receiver, message, region);
+            await this.storage.sendSMS(receiver, message, region, 0);
             await this.storage.removeVerification(requestId);
         }
     }
 
     private async onSendMessages() {
-        const list = await this.storage.getSMSOnStarted(2);
-        for (const item of list) {
-            if (item.region === MessageRegion.Philippines) {
-                const response = await this.sendSMSPH(item);
-                if (response !== undefined) {
-                    item.status = response.status;
-                    item.messageId = response.messageId;
-                    await this.storage.updateSMS(item);
+        for (let priority = 0; priority < 2; priority++) {
+            const list = await this.storage.getSMSOnStarted(priority, 2);
+            for (const item of list) {
+                if (item.region === MessageRegion.Philippines) {
+                    const response = await this.sendSMSPH(item);
+                    if (response !== undefined) {
+                        item.status = response.status;
+                        item.messageId = response.messageId;
+                        await this.storage.updateSMS(item);
 
-                    logger.info(
-                        `SMSPHScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
-                    );
-                }
-            } else if (item.region === MessageRegion.Korean) {
-                const response = await this.sendSMSKR(item);
-                if (response !== undefined) {
-                    item.status = response.status;
-                    item.messageId = response.messageId;
-                    await this.storage.updateSMS(item);
+                        logger.info(
+                            `SMSPHScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
+                        );
+                    }
+                } else if (item.region === MessageRegion.Korean) {
+                    const response = await this.sendSMSKR(item);
+                    if (response !== undefined) {
+                        item.status = response.status;
+                        item.messageId = response.messageId;
+                        await this.storage.removeSMS(item);
 
-                    logger.info(
-                        `SMSPHScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
-                    );
+                        logger.info(
+                            `SMSPHScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
+                        );
+                    }
                 }
             }
         }
@@ -130,75 +132,42 @@ export class SMSScheduler extends Scheduler {
 
     private async onWatchSMS() {
         const list = await this.storage.getSMSOnPending(2);
-        if (list.length < 10) {
-            for (const item of list) {
-                const messageStatus = await this.checkMessageStatus(item);
-                if (messageStatus.status === MessageStatus.Failed || messageStatus.status === MessageStatus.Refunded) {
-                    try {
-                        this.metrics.add("failure", 1);
-                        logger.info(
-                            `Fail - ${item.receiver}, ${item.message}, ${messageStatus.messageId}, ${messageStatus.status}`
-                        );
-                        item.status = MessageStatus.Retry;
-                        await this.storage.updateSMS(item);
-
-                        const smsData: ISMSData = {
-                            receiver: item.receiver,
-                            message: item.message,
-                            region: item.region,
-                            status: MessageStatus.Started,
-                            messageId: "0",
-                        };
-                        await this.storage.postSMS(smsData);
-                    } catch (e) {
-                        //
-                    }
-                } else if (messageStatus.status === MessageStatus.Queued) {
-                    item.status = messageStatus.status;
-                    await this.storage.updateSMS(item);
-                } else if (messageStatus.status === MessageStatus.Pending) {
-                    item.status = messageStatus.status;
-                    await this.storage.updateSMS(item);
-                } else if (messageStatus.status === MessageStatus.Sent) {
-                    this.metrics.add("success", 1);
+        for (const item of list) {
+            const messageStatus = await this.checkMessageStatus(item);
+            if (messageStatus.status === MessageStatus.Failed || messageStatus.status === MessageStatus.Refunded) {
+                try {
+                    this.metrics.add("failure", 1);
                     logger.info(
-                        `Success - ${item.receiver}, ${item.message}, ${messageStatus.messageId}, ${messageStatus.status}`
+                        `Fail - ${item.receiver}, ${item.message}, ${messageStatus.messageId}, ${messageStatus.status}`
                     );
-                    item.status = messageStatus.status;
+                    item.status = MessageStatus.Retry;
                     await this.storage.updateSMS(item);
-                }
-            }
-        } else {
-            const statuses = await this.getMessageStatusOnToday();
-            for (const item of list) {
-                const messageStatus = statuses.find((m) => m.messageId === item.messageId);
-                if (messageStatus === undefined) continue;
-                if (messageStatus.status === MessageStatus.Failed || messageStatus.status === MessageStatus.Refunded) {
-                    try {
-                        item.status = MessageStatus.Retry;
-                        await this.storage.updateSMS(item);
 
-                        const smsData: ISMSData = {
-                            receiver: item.receiver,
-                            message: item.message,
-                            region: item.region,
-                            status: MessageStatus.Started,
-                            messageId: "0",
-                        };
-                        await this.storage.postSMS(smsData);
-                    } catch (e) {
-                        //
-                    }
-                } else if (messageStatus.status === MessageStatus.Queued) {
-                    item.status = messageStatus.status;
-                    await this.storage.updateSMS(item);
-                } else if (messageStatus.status === MessageStatus.Pending) {
-                    item.status = messageStatus.status;
-                    await this.storage.updateSMS(item);
-                } else if (messageStatus.status === MessageStatus.Sent) {
-                    item.status = messageStatus.status;
-                    await this.storage.updateSMS(item);
+                    const smsData: ISMSData = {
+                        receiver: item.receiver,
+                        message: item.message,
+                        region: item.region,
+                        priority: item.priority,
+                        status: MessageStatus.Started,
+                        messageId: "0",
+                    };
+                    await this.storage.postSMS(smsData);
+                } catch (e) {
+                    //
                 }
+            } else if (messageStatus.status === MessageStatus.Queued) {
+                item.status = messageStatus.status;
+                await this.storage.updateSMS(item);
+            } else if (messageStatus.status === MessageStatus.Pending) {
+                item.status = messageStatus.status;
+                await this.storage.updateSMS(item);
+            } else if (messageStatus.status === MessageStatus.Sent) {
+                this.metrics.add("success", 1);
+                logger.info(
+                    `Success - ${item.receiver}, ${item.message}, ${messageStatus.messageId}, ${messageStatus.status}`
+                );
+                item.status = messageStatus.status;
+                await this.storage.removeSMS(item);
             }
         }
     }
@@ -283,6 +252,7 @@ export class SMSScheduler extends Scheduler {
                     receiver: message.receiver,
                     message: message.message,
                     region: message.region,
+                    priority: message.priority,
                     status: String(res.data[0].status).trim().toLowerCase(),
                     messageId: String(res.data[0].message_id).trim(),
                 };
@@ -314,6 +284,7 @@ export class SMSScheduler extends Scheduler {
                 receiver: message.receiver,
                 message: message.message,
                 region: message.region,
+                priority: message.priority,
                 status: MessageStatus.Sent,
                 messageId: String(res.msg_id).trim(),
             };

@@ -8,6 +8,7 @@
             "receiver"  ,
             "message"   ,
             "region"    ,
+            "priority"  ,
             "status"    ,
             "messageId" ,
             "timestamp"
@@ -17,6 +18,7 @@
                 #{receiver} ,
                 #{message}  ,
                 #{region}   ,
+                #{priority} ,
                 #{status}   ,
                 #{messageId},
                 now()
@@ -42,7 +44,7 @@
         FROM
             sms
         WHERE
-            "status" = 'started'
+            "status" = 'started' AND "priority" = ${priority}
         ORDER BY sequence ASC
             LIMIT ${limit};
     </select>
@@ -55,4 +57,12 @@
         WHERE
             "sequence" = #{sequence}
     </update>
+
+    <delete id="remove">
+        DELETE
+        FROM
+            sms
+        WHERE
+            "sequence" = #{sequence}
+    </delete>
 </mapper>

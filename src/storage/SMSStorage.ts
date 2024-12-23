@@ -35,12 +35,13 @@ export class SMSStorage extends Storage {
         await this.queryForMapper("table", "drop_table", {});
     }
 
-    public async sendSMS(receiver: string, message: string, region: string) {
+    public async sendSMS(receiver: string, message: string, region: string, priority: number) {
         try {
             const smsData: ISMSData = {
                 receiver,
                 message,
                 region,
+                priority,
                 status: MessageStatus.Started,
                 messageId: "0",
             };
@@ -56,6 +57,7 @@ export class SMSStorage extends Storage {
                 receiver: data.receiver,
                 message: data.message,
                 region: data.region,
+                priority: data.priority,
                 status: data.status,
                 messageId: data.messageId,
             })
@@ -80,6 +82,7 @@ export class SMSStorage extends Storage {
                                 receiver: m.receiver,
                                 message: m.message,
                                 region: m.region,
+                                priority: m.priority,
                                 messageId: m.messageId,
                                 status: m.status,
                             };
@@ -93,9 +96,9 @@ export class SMSStorage extends Storage {
         });
     }
 
-    public getSMSOnStarted(limit: number): Promise<IProcessedSMSPHData[]> {
+    public getSMSOnStarted(priority: number, limit: number): Promise<IProcessedSMSPHData[]> {
         return new Promise<IProcessedSMSPHData[]>(async (resolve, reject) => {
-            this.queryForMapper("sms", "getSMSOnStarted", { limit })
+            this.queryForMapper("sms", "getSMSOnStarted", { priority, limit })
                 .then((result) => {
                     return resolve(
                         result.rows.map((m) => {
@@ -104,6 +107,7 @@ export class SMSStorage extends Storage {
                                 receiver: m.receiver,
                                 message: m.message,
                                 region: m.region,
+                                priority: m.priority,
                                 messageId: m.messageId,
                                 status: m.status,
                             };
@@ -123,6 +127,21 @@ export class SMSStorage extends Storage {
                 sequence: data.sequence,
                 status: data.status,
                 messageId: data.messageId,
+            })
+                .then(() => {
+                    return resolve();
+                })
+                .catch((reason) => {
+                    if (reason instanceof Error) return reject(reason);
+                    return reject(new Error(reason));
+                });
+        });
+    }
+
+    public removeSMS(data: IProcessedSMSPHData): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            this.queryForMapper("sms", "remove", {
+                sequence: data.sequence,
             })
                 .then(() => {
                     return resolve();

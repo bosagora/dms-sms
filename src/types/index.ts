@@ -2,6 +2,7 @@ export interface ISMSData {
     receiver: string;
     message: string;
     region: string;
+    priority: number;
     status: string;
     messageId: string;
 }
