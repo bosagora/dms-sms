@@ -93,7 +93,7 @@ export class SMSScheduler extends Scheduler {
             const { requestId, receiver, region, code1, code2, code3 } = item;
 
             const code = code1 + code2 + code3;
-            const message = `${code} is your verification code for ACCCoin.`;
+            const message = `${code} 는 인증코드(KIOS) 입니다.`;
             await this.storage.sendSMS(receiver, message, region, 0);
             await this.storage.removeVerification(requestId);
         }
