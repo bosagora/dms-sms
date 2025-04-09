@@ -103,6 +103,9 @@ export class SMSScheduler extends Scheduler {
         for (let priority = 0; priority < 2; priority++) {
             const list = await this.storage.getSMSOnStarted(priority, 2);
             for (const item of list) {
+                if (this.config.sms.items.get(item.region) === undefined) {
+                    await this.storage.removeSMS(item);
+                } else
                 if (item.region === MessageRegion.Philippines) {
                     const response = await this.sendSMSPH(item);
                     if (response !== undefined) {
@@ -111,7 +114,7 @@ export class SMSScheduler extends Scheduler {
                         await this.storage.updateSMS(item);
 
                         logger.info(
-                            `SMSPHScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
+                            `SMSScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
                         );
                     }
                 } else if (item.region === MessageRegion.Korean) {
@@ -122,9 +125,11 @@ export class SMSScheduler extends Scheduler {
                         await this.storage.removeSMS(item);
 
                         logger.info(
-                            `SMSPHScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
+                            `SMSScheduler.onSendMessages - ${item.receiver}, ${item.message}, ${item.messageId}, ${item.status}`
                         );
                     }
+                } else {
+                    await this.storage.removeSMS(item);
                 }
             }
         }
