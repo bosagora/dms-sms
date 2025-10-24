@@ -1,6 +1,13 @@
 server:
   address: ${HOST_IP}
-  port: ${HOST_PORT}
+  http:
+    enable: ${HTTP_ENABLE}
+    port: ${HTTP_PORT}
+  https:
+    enable: ${HTTPS_ENABLE}
+    port: ${HTTPS_PORT}
+    cert: ${SSL_CERT_PATH}
+    key: ${SSL_KEY_PATH}
 
 database:
   host: "${DATABASE_HOST}"

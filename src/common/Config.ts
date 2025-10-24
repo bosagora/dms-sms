@@ -67,11 +67,12 @@ export class Config implements IConfig {
 
 export class ServerConfig implements IServerConfig {
     public address: string;
-    public port: number;
+    public http: HTTPConfig;
+    public https: HTTPSConfig;
 
-    constructor(address?: string, port?: number) {
+    constructor(address?: string, http?: HTTPConfig, https?: HTTPSConfig) {
         const conf = extend(true, {}, ServerConfig.defaultValue());
-        extend(true, conf, { address, port });
+        extend(true, conf, { address, http, https });
 
         if (!ip.isV4Format(conf.address) && !ip.isV6Format(conf.address)) {
             console.error(`${conf.address}' is not appropriate to use as an IP address.`);
@@ -79,13 +80,23 @@ export class ServerConfig implements IServerConfig {
         }
 
         this.address = conf.address;
-        this.port = conf.port;
+        this.http = conf.http;
+        this.https = conf.https;
     }
 
     public static defaultValue(): IServerConfig {
         return {
             address: "127.0.0.1",
-            port: 3300,
+            http: {
+                enable: true,
+                port: 3300,
+            },
+            https: {
+                enable: false,
+                port: 3443,
+                cert: "",
+                key: "",
+            },
         };
     }
 
@@ -98,7 +109,12 @@ export class ServerConfig implements IServerConfig {
             process.exit(1);
         }
         this.address = conf.address;
-        this.port = conf.port;
+        this.http.enable = conf.http.enable.toString().toLowerCase() === "true";
+        this.http.port = conf.http.port;
+        this.https.enable = conf.https.enable.toString().toLowerCase() === "true";
+        this.https.port = conf.https.port;
+        this.https.cert = conf.https.cert;
+        this.https.key = conf.https.key;
     }
 }
 
@@ -280,9 +296,22 @@ export class SMSConfig implements ISMSConfig {
     }
 }
 
+export interface HTTPConfig {
+    enable: boolean;
+    port: number;
+}
+
+export interface HTTPSConfig {
+    enable: boolean;
+    port: number;
+    cert: string;
+    key: string;
+}
+
 export interface IServerConfig {
     address: string;
-    port: number;
+    http: HTTPConfig;
+    https: HTTPSConfig;
 }
 
 export interface IDatabaseConfig {

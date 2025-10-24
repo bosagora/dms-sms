@@ -18,7 +18,7 @@ export class DefaultServer extends WebService {
     public readonly router: DefaultRouter;
 
     constructor(config: Config, storage: SMSStorage, schedules?: Scheduler[]) {
-        super(config.server.port, config.server.address);
+        super(config.server);
         register.clear();
         this.metrics = new Metrics();
         this.metrics.create("gauge", "status", "serve status");
@@ -63,16 +63,9 @@ export class DefaultServer extends WebService {
         return super.start();
     }
 
-    public stop(): Promise<void> {
-        return new Promise<void>(async (resolve, reject) => {
-            for (const m of this.schedules) await m.stop();
-            for (const m of this.schedules) await m.waitForStop();
-            if (this.server != null) {
-                this.server.close((err?) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            } else resolve();
-        });
+    public async stop(): Promise<void> {
+        for (const m of this.schedules) await m.stop();
+        for (const m of this.schedules) await m.waitForStop();
+        return super.stop();
     }
 }

@@ -32,7 +32,7 @@ describe("Test of Server", () => {
 
     before("Create TestServer", async () => {
         storage = await SMSStorage.make(config.database);
-        serverURL = new URL(`http://127.0.0.1:${config.server.port}`);
+        serverURL = new URL(`http://127.0.0.1:${config.server.http.port}`);
         server = new TestServer(config, storage);
     });
 
@@ -51,7 +51,6 @@ describe("Test of Server", () => {
         const url = uri.toString();
         const response = await client.post(url, {
             msg: contents.join("\n"),
-            sender: process.env.SMS_SENDER,
             receiver: process.env.SMS_RECEIVER,
         });
         console.log(response.data);

@@ -105,8 +105,7 @@ export class SMSScheduler extends Scheduler {
             for (const item of list) {
                 if (this.config.sms.items.get(item.region) === undefined) {
                     await this.storage.removeSMS(item);
-                } else
-                if (item.region === MessageRegion.Philippines) {
+                } else if (item.region === MessageRegion.Philippines) {
                     const response = await this.sendSMSPH(item);
                     if (response !== undefined) {
                         item.status = response.status;

@@ -7,7 +7,6 @@ import { Config } from "../src/common/Config";
 
 import * as assert from "assert";
 import path from "path";
-import { Utils } from "../src/utils/Utils";
 
 describe("Test of Config", () => {
     it("Test parsing the settings of a string", async () => {
@@ -15,7 +14,8 @@ describe("Test of Config", () => {
         config.readFromFile(path.resolve("tests", "config.test.yaml"));
 
         assert.strictEqual(config.server.address, "0.0.0.0");
-        assert.strictEqual(config.server.port, 3300);
+        assert.strictEqual(config.server.http.enable, true);
+        assert.strictEqual(config.server.http.port, 3300);
 
         assert.strictEqual(config.logging.level, "debug");
     });
